@@ -1,0 +1,26 @@
+ID,Product_Name,Price,Category,Brand,Stock_Quantity,Description,Path_image
+1,Laptop Pro 15,1299.99,Electronics,TechBrand,50,High-performance laptop,assets/images/laptop_pro_15.png
+2,Wireless Mouse,29.99,Electronics,TechBrand,200,Ergonomic wireless mouse,assets/images/wireless_mouse.png
+3,Mechanical Keyboard,89.99,Electronics,TechBrand,150,RGB mechanical keyboard,assets/images/mechanical_keyboard.png
+4,USB-C Hub,49.99,Electronics,TechBrand,100,7-in-1 USB-C hub,assets/images/USB-C_Hub.png
+5,Monitor 27",349.99,Electronics,TechBrand,75,4K UHD monitor,assets/images/monitor_27.png
+6,Running Shoes,89.99,Sports,SportBrand,120,Lightweight running shoes,assets/images/running_shoes.png
+7,Yoga Mat,24.99,Sports,SportBrand,200,Non-slip yoga mat,assets/images/yoga_mat.png
+8,Dumbbell Set,149.99,Sports,SportBrand,50,20kg adjustable dumbbells,assets/images/dumbbell_set.png
+9,Resistance Bands,19.99,Sports,SportBrand,300,Set of 5 resistance bands,assets/images/resistance_bands.png
+10,Water Bottle,14.99,Sports,SportBrand,400,Insulated water bottle,assets/images/water_bottle.png
+11,T-Shirt Cotton,19.99,Clothing,FashionBrand,500,Comfortable cotton t-shirt,assets/images/t-shirt_cotton.png
+12,Jeans Slim Fit,59.99,Clothing,FashionBrand,200,Classic slim fit jeans,assets/images/jeans_slim.png
+13,Sneakers,79.99,Clothing,FashionBrand,150,Casual sneakers,assets/images/sneakers.png
+14,Backpack,49.99,Clothing,FashionBrand,100,Stylish backpack 20L,assets/images/backpack.png
+15,Sunglasses,39.99,Clothing,FashionBrand,250,UV protection sunglasses,assets/images/sunglasses.png
+16,Coffee Maker,79.99,Home,HomeBrand,80,Programmable coffee maker,assets/images/coffee_maker.png
+
+
+
+
+
+
+
+
+

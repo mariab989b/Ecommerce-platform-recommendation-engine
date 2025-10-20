@@ -1,0 +1,6 @@
+excel_path: /app/data/ecommerce.xlsx
+events_backend: kafka
+kafka:
+  bootstrap_servers: redpanda-service:9092
+  topic_views: product_views
+  topic_events: events_app

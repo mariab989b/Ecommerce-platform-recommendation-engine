@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: ecommerce-platform
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "redpanda-service:9092"
+  KAFKA_TOPIC: "product_views"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "ecommerce_analytics"
+  POSTGRES_USER: "admin"
+  POSTGRES_PASSWORD: "strongpassword123"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  PRODUCT_CSV_PATH: "/app/data/produit.csv"
