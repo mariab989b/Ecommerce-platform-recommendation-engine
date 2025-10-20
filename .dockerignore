@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Data files - MAIS PAS produit.csv !
+data/*.xlsx
+# *.csv  ← COMMENTÉ pour permettre produit.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Kubernetes
+k8s/
+
+# Documentation
+README.md
+docs/
+
+# Tests
+tests/
+pytest.ini
+.pytest_cache/
+
+# Docker
+docker-compose.yml
+
+# Airflow
+airflow/
+
+# Monitoring
+monitoring/
+
+# Scripts
+scripts/
+
+# SQL
+sql/
+
+# Assets - mais pas les images !
+# assets/
