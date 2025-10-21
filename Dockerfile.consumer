@@ -2,21 +2,18 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Installer dépendances système
 RUN apt-get update && apt-get install -y gcc g++ && rm -rf /var/lib/apt/lists/*
 
-# Installer dépendances Python
-RUN pip install --no-cache-dir kafka-python python-dotenv prometheus-client
+RUN pip install --no-cache-dir kafka-python python-dotenv prometheus-client redis
 
-# Copier TOUT le contenu de src/ dans /app/
 COPY src/ ./
 
-# Variables d'environnement
 ENV KAFKA_BROKERS=redpanda-service:9092
 ENV KAFKA_TOPIC_VIEWS=product_views
 ENV KAFKA_TOPIC_EVENTS=events_app
 ENV KAFKA_GROUP_ID=ecom-consumer
+ENV REDIS_HOST=redis-service
+ENV REDIS_PORT=6379
 ENV PYTHONUNBUFFERED=1
 
-# Lancer consumer.py qui est maintenant dans /app/
 CMD ["python", "-u", "consumer.py"]

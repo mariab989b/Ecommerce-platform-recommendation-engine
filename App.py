@@ -1,63 +1,152 @@
-# --- App.py (extrait à intégrer) ---
-import os, json, time
 import streamlit as st
 import pandas as pd
-import redis
-from kafka import KafkaProducer
+import uuid
+import os
+from lib.events import EventDispatcher
 
-BOOTSTRAP   = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "redpanda-service:9092")
-TOPIC_VIEWS = os.getenv("KAFKA_TOPIC_VIEWS", "product_views")
-REDIS_HOST  = os.getenv("REDIS_HOST", "redis-service")
-REDIS_PORT  = int(os.getenv("REDIS_PORT", "6379"))
+st.set_page_config(
+    page_title="BuyMe",
+    page_icon="🛍️",
+    layout="wide"
+)
 
-@st.cache_resource
-def get_producer():
-    return KafkaProducer(
-        bootstrap_servers=[s.strip() for s in BOOTSTRAP.split(",") if s.strip()],
-        value_serializer=lambda v: json.dumps(v).encode("utf-8")
-    )
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .stat-card {
+        background: #f9fafb;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #3b82f6;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-@st.cache_resource
-def get_redis():
-    return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+# Session state
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+if 'user' not in st.session_state:
+    st.session_state.user = None
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = f"anonymous_{str(uuid.uuid4())[:8]}"
+if 'cart' not in st.session_state:
+    st.session_state.cart = {}
 
-producer = get_producer()
-r = get_redis()
+@st.cache_data
+def load_products():
+    paths = ['/app/data/produit.csv', 'data/produit.csv']
+    for path in paths:
+        try:
+            if os.path.exists(path):
+                df = pd.read_csv(path)
+                df = df.rename(columns={
+                    'ID': 'id',
+                    'Product_Name': 'name',
+                    'Price': 'price',
+                    'Category': 'category',
+                    'Stock_Quantity': 'stock',
+                    'Path_image': 'image_url'
+                })
+                df['active'] = True
+                df['currency'] = 'EUR'
+                return df
+        except:
+            continue
+    st.error("Could not load products")
+    st.stop()
 
-# Chargez votre CSV (adaptez le chemin)
-df = pd.read_csv("data/produit.csv")
+@st.cache_data
+def load_users():
+    return pd.DataFrame([
+        {"id": 1, "email": "admin@buyme.com", "password": "admin123", "role": "admin"},
+        {"id": 2, "email": "alice@demo.com", "password": "alice123", "role": "customer"},
+        {"id": 3, "email": "bob@demo.com", "password": "bob123", "role": "customer"},
+    ])
 
-user_id = st.session_state.get("user_id", "anonymous")
+if 'products' not in st.session_state:
+    st.session_state.products = load_products()
+    st.session_state.users = load_users()
+    st.session_state.events = EventDispatcher(backend='kafka', store=None, kafka_conf={})
 
-st.header("Product Catalog")
-for _, row in df.iterrows():
-    pid = str(row["ID"])
-    with st.container(border=True):
-        st.image(row["Path_image"], use_container_width=True)  # images en assets (cf. Dockerfile)
-        st.subheader(row["Product_Name"])
-        st.caption(f"{row['Category']} • {row['Brand']} • {row['Price']} €")
-        if st.button("Voir", key=f"view_{pid}"):
-            # 1) envoyer l'évènement "view"
-            evt = {"type": "view", "user_id": user_id, "product_id": pid, "ts": time.time()}
-            producer.send(TOPIC_VIEWS, value=evt)
-            producer.flush()
+# Sidebar
+with st.sidebar:
+    st.markdown("### Account")
+    
+    if st.session_state.user is None:
+        st.info("Guest Mode")
+        
+        with st.expander("Sign In"):
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            
+            if st.button("Sign In", type="primary"):
+                users = st.session_state.users
+                match = users[(users['email'].str.lower() == email.lower()) & (users['password'] == password)]
+                
+                if not match.empty:
+                    st.session_state.user = match.iloc[0].to_dict()
+                    st.session_state.user_id = f"user_{match.iloc[0]['id']}"
+                    st.success("Signed in")
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+        
+        st.caption("Demo: alice@demo.com / alice123")
+    else:
+        st.success("Signed in")
+        st.write(f"**{st.session_state.user['email']}**")
+        
+        if st.button("Sign Out"):
+            st.session_state.user = None
+            st.session_state.user_id = f"anonymous_{str(uuid.uuid4())[:8]}"
+            st.rerun()
 
-            # 2) lecture des recos en Redis: recs:{user_id}:{product_id} (backoff court)
-            key = f"recs:{user_id}:{pid}"
-            recs = None
-            for _ in range(10):  # ~ 2 secondes
-                val = r.get(key)
-                if val:
-                    recs = json.loads(val)
-                    break
-                time.sleep(0.2)
+# Main
+st.markdown('<h1 class="main-header">BuyMe</h1>', unsafe_allow_html=True)
+st.markdown("---")
 
-            st.markdown("### Recommandations")
-            if recs:
-                # si vous voulez montrer les images/titres:
-                rid_set = set(str(x["product_id"]) for x in recs)
-                df_rec = df[df["ID"].astype(str).isin(rid_set)]
-                for _, rr in df_rec.iterrows():
-                    st.write(f"• {rr['Product_Name']} — {rr['Price']} €")
-            else:
-                st.info("Aucune recommandation disponible pour le moment…")
+products = st.session_state.products
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(f"""
+    <div class="stat-card">
+        <div class="stat-value">{len(products)}</div>
+        <div class="stat-label">Products</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="stat-card">
+        <div class="stat-value">{products['category'].nunique()}</div>
+        <div class="stat-label">Categories</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    status = "Authenticated" if st.session_state.user else "Guest"
+    st.markdown(f"""
+    <div class="stat-card">
+        <div class="stat-value">{status}</div>
+        <div class="stat-label">Status</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+st.info("Navigate to Product Catalog in the sidebar")

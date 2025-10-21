@@ -4,19 +4,6 @@ metadata:
   name: ecommerce-platform
 
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: streamlit-data-pvc
-  namespace: ecommerce-platform
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,10 +19,19 @@ spec:
       labels:
         app: streamlit
     spec:
+      # Créer le dossier data au démarrage
+      initContainers:
+      - name: init-data-dir
+        image: busybox
+        command: ['sh', '-c', 'mkdir -p /data && chmod 777 /data']
+        volumeMounts:
+        - name: data-dir
+          mountPath: /data
+      
       containers:
       - name: streamlit
-        image: streamlit-ecommerce:latest  # ← IMAGE LOCALE
-        imagePullPolicy: Never  # ← IMPORTANT pour Docker Desktop
+        image: streamlit-ecommerce:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8501
           name: http
@@ -48,11 +44,14 @@ spec:
           value: "events_app"
         - name: PYTHONUNBUFFERED
           value: "1"
-        - name: TZ
-          value: "Europe/Paris"
         volumeMounts:
-        - name: data
+        # Dossier data vide
+        - name: data-dir
           mountPath: /app/data
+        # CSV depuis ConfigMap
+        - name: csv-data
+          mountPath: /app/data/produit.csv
+          subPath: produit.csv
         resources:
           requests:
             memory: "256Mi"
@@ -64,22 +63,23 @@ spec:
           httpGet:
             path: /_stcore/health
             port: http
-          initialDelaySeconds: 20
+          initialDelaySeconds: 30
           periodSeconds: 20
-          timeoutSeconds: 2
-          failureThreshold: 6
         readinessProbe:
           httpGet:
             path: /_stcore/health
             port: http
-          initialDelaySeconds: 8
+          initialDelaySeconds: 10
           periodSeconds: 10
-          timeoutSeconds: 2
-          failureThreshold: 6
+      
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: streamlit-data-pvc
+      # Volume temporaire pour /app/data
+      - name: data-dir
+        emptyDir: {}
+      # ConfigMap pour le CSV
+      - name: csv-data
+        configMap:
+          name: produit-csv
 
 ---
 apiVersion: v1
