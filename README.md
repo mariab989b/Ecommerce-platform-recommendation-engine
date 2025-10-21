@@ -33,7 +33,7 @@ A production-ready e-commerce platform built with **Streamlit**, **Apache Kafka*
 ### Current Implementation
 - **Product Catalog**: Browse 16+ products across multiple categories
 - **Real-Time Events**: Track user interactions via Kafka
-- **Smart Recommendations**: AI-powered product suggestions based on browsing behavior
+- **Recommendations**: The recommandation is simulated with a csv file
 - **Session Management**: Guest and authenticated user support
 - **Event Analytics**: Store and analyze product views in PostgreSQL
 - **Caching Layer**: Redis for fast recommendation retrieval
